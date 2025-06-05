@@ -33,7 +33,7 @@ class Main():
         self.screen.blit(instructions4, (650, 394))
 
 
-#test
+#testing
     def _draw(self, maze, tile, player, game, clock, coords):
         # draw maze
         [cell.draw(self.screen, tile) for cell in maze.grid_cells]
