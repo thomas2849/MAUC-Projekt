@@ -19,28 +19,39 @@ class Player:
         for cell in grid_cells:
             if cell.x == x and cell.y == y:
                 return cell
+        print(f"⚠️ Warning: No matching cell at ({x}, {y})")
+        return None
 
     # stops player to pass through walls
     def check_move(self, tile, grid_cells, thickness):
         current_cell_x, current_cell_y = self.x // tile, self.y // tile
         current_cell = self.get_current_cell(current_cell_x, current_cell_y, grid_cells)
+
+        if current_cell is None:
+            # Stop movement if not in a valid cell
+            self.left_pressed = False
+            self.right_pressed = False
+            self.up_pressed = False
+            self.down_pressed = False
+            return
+
         current_cell_abs_x, current_cell_abs_y = current_cell_x * tile, current_cell_y * tile
+
         if self.left_pressed:
-            if current_cell.walls['left']:
-                if self.x <= current_cell_abs_x + thickness:
-                    self.left_pressed = False
+            if current_cell.walls['left'] and self.x <= current_cell_abs_x + thickness:
+                self.left_pressed = False
+
         if self.right_pressed:
-            if current_cell.walls['right']:
-                if self.x >= current_cell_abs_x + tile - (self.player_size + thickness):
-                    self.right_pressed = False
+            if current_cell.walls['right'] and self.x >= current_cell_abs_x + tile - (self.player_size + thickness):
+                self.right_pressed = False
+
         if self.up_pressed:
-            if current_cell.walls['top']:
-                if self.y <= current_cell_abs_y + thickness:
-                    self.up_pressed = False
+            if current_cell.walls['top'] and self.y <= current_cell_abs_y + thickness:
+                self.up_pressed = False
+
         if self.down_pressed:
-            if current_cell.walls['bottom']:
-                if self.y >= current_cell_abs_y + tile - (self.player_size + thickness):
-                    self.down_pressed = False
+            if current_cell.walls['bottom'] and self.y >= current_cell_abs_y + tile - (self.player_size + thickness):
+                self.down_pressed = False
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, self.rect)
@@ -60,4 +71,7 @@ class Player:
             self.velY = self.speed
         self.x += self.velX
         self.y += self.velY
+        self.x = max(0, min(self.x, 602 - self.player_size))
+        self.y = max(0, min(self.y, 602 - self.player_size))
+
         self.rect = pygame.Rect(int(self.x), int(self.y), self.player_size, self.player_size)

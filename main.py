@@ -8,6 +8,8 @@ from game import Game
 from clock import Clock
 from reward import Reward
 import random
+
+
 pygame.init()
 pygame.font.init()
 
@@ -20,6 +22,7 @@ class Main():
         self.game_over = False
         self.FPS = pygame.time.Clock()
         self.coords = []
+
 
     def instructions(self, player):
         instructions1 = self.font.render('Use', True, self.message_color)
@@ -72,6 +75,9 @@ class Main():
                 print(e)
                 print(i)
                 print(len(self.coords))
+
+
+
     def main(self, frame_size, tile):
         cols, rows = frame_size[0] // tile, frame_size[-1] // tile
         maze = Maze(cols, rows)
@@ -88,30 +94,25 @@ class Main():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+
             # if keys were pressed still
-            if event.type == pygame.KEYDOWN:
+            if event.type == pygame.MOUSEMOTION:
                 if not self.game_over:
-                    if event.key == pygame.K_LEFT:
+                    mouse_x, mouse_y = event.pos
+                    player.left_pressed = player.right_pressed = False
+                    player.up_pressed = player.down_pressed = False
+
+                    if mouse_x < player.x:
                         player.left_pressed = True
-                    if event.key == pygame.K_RIGHT:
+                    elif mouse_x > player.x:
                         player.right_pressed = True
-                    if event.key == pygame.K_UP:
+                    if mouse_y < player.y:
                         player.up_pressed = True
-                    if event.key == pygame.K_DOWN:
+                    elif mouse_y > player.y:
                         player.down_pressed = True
+
                     player.check_move(tile, maze.grid_cells, maze.thickness)
-            # if pressed key released
-            if event.type == pygame.KEYUP:
-                if not self.game_over:
-                    if event.key == pygame.K_LEFT:
-                        player.left_pressed = False
-                    if event.key == pygame.K_RIGHT:
-                        player.right_pressed = False
-                    if event.key == pygame.K_UP:
-                        player.up_pressed = False
-                    if event.key == pygame.K_DOWN:
-                        player.down_pressed = False
-                    player.check_move(tile, maze.grid_cells, maze.thickness)
+
             if game.is_game_over(player):
                 self.game_over = True
                 player.left_pressed = False
