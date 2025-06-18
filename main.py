@@ -8,7 +8,9 @@ from game import Game
 from clock import Clock
 from reward import Reward
 import random
-
+import time
+import json
+import paho.mqtt.client as mqtt
 
 pygame.init()
 pygame.font.init()
@@ -21,6 +23,7 @@ class Main():
         self.running = True
         self.game_over = False
         self.FPS = pygame.time.Clock()
+        self.mqtt = mqtt.Client()
         self.coords = []
 
 
@@ -79,12 +82,27 @@ class Main():
 
 
     def main(self, frame_size, tile):
+        try:
+            self.mqtt.connect("localhost", 1883, 60)
+            print("✅ Connected to MQTT broker at localhost:1883")
+        except Exception as e:
+            print(f"❌ Could not connect to MQTT broker: {e}")
+            exit(1)
         cols, rows = frame_size[0] // tile, frame_size[-1] // tile
         maze = Maze(cols, rows)
         game = Game(maze.grid_cells[-1], tile)
         player = Player(tile // 3, tile // 3)
         clock = Clock()
         maze.generate_maze()
+        maze_data = []
+        for cell in maze.grid_cells:
+            maze_data.append({
+                "x": cell.x,
+                "y": cell.y,
+                "walls": cell.walls
+            })
+        self.mqtt.publish("maze/data", json.dumps(maze_data))
+        print("→ Published to MQTT:", json.dumps(maze_data))
         clock.start_timer()
         self.coords = self.generate_random_coordinates(maze)
         while self.running:
@@ -112,6 +130,8 @@ class Main():
                         player.down_pressed = True
 
                     player.check_move(tile, maze.grid_cells, maze.thickness)
+                    self.mqtt.publish("arduino/position", json.dumps([player.x, player.y]))
+
 
             if game.is_game_over(player):
                 self.game_over = True
