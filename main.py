@@ -83,7 +83,7 @@ class Main():
 
     def main(self, frame_size, tile):
         try:
-            self.mqtt.connect("localhost", 1883, 60)
+            self.mqtt.connect("localhost",1883, 60)
             print("✅ Connected to MQTT broker at localhost:1883")
         except Exception as e:
             print(f"❌ Could not connect to MQTT broker: {e}")
@@ -143,6 +143,7 @@ class Main():
             self._draw(maze, tile, player, game, clock, self.coords)
             self.check_reward(player, tile)
             self.FPS.tick(60)
+            self.mqtt.loop_start()
 
 
 if __name__ == "__main__":
