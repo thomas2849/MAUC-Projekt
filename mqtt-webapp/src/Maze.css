@@ -1,0 +1,8 @@
+.maze-container {
+  margin: 20px auto;
+  width: max-content;
+}
+
+.maze-cell {
+  transition: background-color 0.1s;
+}

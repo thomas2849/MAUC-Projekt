@@ -133,6 +133,7 @@ class Main():
                     self.mqtt.publish("arduino/position", json.dumps([player.x, player.y]))
 
 
+
             if game.is_game_over(player):
                 self.game_over = True
                 player.left_pressed = False

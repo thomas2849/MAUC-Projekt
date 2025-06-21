@@ -3,7 +3,7 @@ import pygame
 class Player:
     def __init__(self, x, y):
         self.x, self.y = x, y
-        self.player_size = 10
+        self.player_size = 27
         self.rect = pygame.Rect(self.x, self.y, self.player_size, self.player_size)
         self.color = (250, 120, 60)
         self.velX = 0

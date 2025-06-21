@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import mqtt from 'mqtt';
+import MazeRenderer from "./MazeRenderer";
 
 const App = () => {
   const [message, setMessage] = useState('Waiting for message...');
@@ -47,7 +48,8 @@ const App = () => {
       } else if (topic === 'arduino/position') {
         try {
           const position = JSON.parse(data);
-          setPlayerPosition(position);
+          const gridPos = toGrid(data)
+          setPlayerPosition(gridPos);
           setMessage(`Player Position: [${position[0]}, ${position[1]}]`);
         } catch (e) {
           setMessage(`Player Position: ${data}`);
@@ -116,6 +118,12 @@ const App = () => {
               <p>X: {playerPosition[0]}, Y: {playerPosition[1]}</p>
             </div>
         )}
+        {mazeData && (
+            <div>
+              <h1>Maze</h1>
+              <MazeRenderer mazeData={mazeData} playerPosition={playerPosition} />
+            </div>
+        )}
 
         <div style={{ fontSize: '12px', color: '#666', marginTop: '30px' }}>
           <p>🔧 Troubleshooting:</p>
@@ -127,6 +135,14 @@ const App = () => {
         </div>
       </div>
   );
+};
+
+const toGrid = ([pxX, pxY]) => {
+  const cellSize = 25;
+  return {
+    x: Math.floor(pxX / cellSize),
+    y: Math.floor(pxY / cellSize),
+  };
 };
 
 export default App;
