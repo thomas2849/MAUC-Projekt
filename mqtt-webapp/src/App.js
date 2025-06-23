@@ -48,8 +48,7 @@ const App = () => {
       } else if (topic === 'arduino/position') {
         try {
           const position = JSON.parse(data);
-          const gridPos = toGrid(data)
-          setPlayerPosition(gridPos);
+          setPlayerPosition(position);
           setMessage(`Player Position: [${position[0]}, ${position[1]}]`);
         } catch (e) {
           setMessage(`Player Position: ${data}`);
@@ -116,12 +115,13 @@ const App = () => {
             <div style={{ marginBottom: '20px' }}>
               <h3>Current Player Position:</h3>
               <p>X: {playerPosition[0]}, Y: {playerPosition[1]}</p>
+              <p>Grid Position: X: {Math.floor(playerPosition[0] / 25)}, Y: {Math.floor(playerPosition[1] / 25)}</p>
             </div>
         )}
         {mazeData && (
             <div>
               <h1>Maze</h1>
-              <MazeRenderer mazeData={mazeData} playerPosition={playerPosition} />
+              <MazeRenderer mazeData={mazeData} playerPosition={playerPosition}/>
             </div>
         )}
 
@@ -137,12 +137,5 @@ const App = () => {
   );
 };
 
-const toGrid = ([pxX, pxY]) => {
-  const cellSize = 25;
-  return {
-    x: Math.floor(pxX / cellSize),
-    y: Math.floor(pxY / cellSize),
-  };
-};
 
 export default App;
