@@ -81,6 +81,7 @@ class Main:
 
         # Overlay “You Win!!” + “Press R to Restart”
         if self.game_over:
+
             win_surf = self.game.message()
             rx = (maze_w - win_surf.get_width())  // 2
             ry = (sh     - win_surf.get_height()) // 2 - 20
@@ -157,6 +158,10 @@ class Main:
         # Start timer & rewards
         self.clock.start_timer()
         self.coords = self.generate_random_coordinates()
+        rewards_coords = [[c.x, c.y] for c in self.coords]
+        self.mqtt.publish("maze/rewards", json.dumps(rewards_coords))
+        print(rewards_coords)
+
 
         # Main loop
         while self.running:

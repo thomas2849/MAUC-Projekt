@@ -1,85 +1,92 @@
 import React from "react";
-import "./Maze.css"; // Import CSS for wall styles
+import "./Maze.css";
 
-const CELL_SIZE = 25; // in pixels
+const CELL_SIZE = 30;
 
-const MazeRenderer = ({ mazeData, playerPosition }) => {
-    const maxX = Math.max(...mazeData.map(cell => cell.x)) + 1;
-    const maxY = Math.max(...mazeData.map(cell => cell.y)) + 1;
+const MazeRenderer = ({ mazeData, playerPosition, rewards }) => {
+  // Maze dimensions in cells
+  const maxX = Math.max(...mazeData.map(c => c.x)) + 1;
+  const maxY = Math.max(...mazeData.map(c => c.y)) + 1;
 
-    // Convert player position from coordinates to grid position
-    const getGridPosition = (position) => {
-        if (!position || position.length < 2) return null;
+  // Convert raw [px,py] → grid cell indices
+  const gridPlayer = playerPosition
+    ? {
+        x: Math.floor(playerPosition[0] / CELL_SIZE),
+        y: Math.floor(playerPosition[1] / CELL_SIZE),
+      }
+    : null;
 
-        // Assuming the position coordinates need to be mapped to grid cells
-        // You might need to adjust this conversion based on your coordinate system
-        const gridX = Math.floor(position[0] / CELL_SIZE);
-        const gridY = Math.floor(position[1] / CELL_SIZE);
+  return (
+    <div
+      className="maze-container"
+      style={{
+        position: "relative",
+        width:  maxX * CELL_SIZE,
+        height: maxY * CELL_SIZE,
+        backgroundColor: "#222",
+      }}
+    >
+      {mazeData.map((cell, i) => {
+        const px = cell.x * CELL_SIZE;
+        const py = cell.y * CELL_SIZE;
+        const isPlayer = gridPlayer
+          && cell.x === gridPlayer.x
+          && cell.y === gridPlayer.y;
+        const hasReward = rewards?.some(r => r.x === cell.x && r.y === cell.y);
 
-        // Ensure the position is within bounds
-        if (gridX >= 0 && gridX < maxX && gridY >= 0 && gridY < maxY) {
-            return { x: gridX, y: gridY };
-        }
-        return null;
-    };
-
-    const gridPlayerPosition = getGridPosition(playerPosition);
-
-    return (
-        <div
-            className="maze-container"
+        return (
+          <div
+            key={i}
             style={{
-                position: "relative",
-                display: "grid",
-                gridTemplateColumns: `repeat(${maxX}, ${CELL_SIZE}px)`,
-                gridTemplateRows: `repeat(${maxY}, ${CELL_SIZE}px)`,
+              position: "absolute",
+              left:   px,
+              top:    py,
+              width:  CELL_SIZE,
+              height: CELL_SIZE,
+              boxSizing: "border-box",
+              borderTop:    cell.walls.top    ? "2px solid #fff" : "2px solid transparent",
+              borderRight:  cell.walls.right  ? "2px solid #fff" : "2px solid transparent",
+              borderBottom: cell.walls.bottom ? "2px solid #fff" : "2px solid transparent",
+              borderLeft:   cell.walls.left   ? "2px solid #fff" : "2px solid transparent",
+              backgroundColor: isPlayer ? "#c00" : "transparent",
             }}
-        >
-            {mazeData.map((cell, index) => {
-                const { top, right, bottom, left } = cell.walls;
-                const isPlayerCell = gridPlayerPosition &&
-                    cell.x === gridPlayerPosition.x &&
-                    cell.y === gridPlayerPosition.y;
+          >
+            {/* Player dot */}
+            {isPlayer && (
+              <div style={{
+                position: "absolute",
+                top:    "50%",
+                left:   "50%",
+                transform: "translate(-50%, -50%)",
+                width:  12,
+                height: 12,
+                borderRadius: "50%",
+                backgroundColor: "#fff",
+                border: "2px solid #333",
+                zIndex: 2,
+              }}/>
+            )}
 
-                return (
-                    <div
-                        key={index}
-                        className={`maze-cell ${isPlayerCell ? 'player-cell' : ''}`}
-                        style={{
-                            borderTop: top ? "2px solid black" : "2px solid transparent",
-                            borderRight: right ? "2px solid black" : "2px solid transparent",
-                            borderBottom: bottom ? "2px solid black" : "2px solid transparent",
-                            borderLeft: left ? "2px solid black" : "2px solid transparent",
-                            width: `${CELL_SIZE}px`,
-                            height: `${CELL_SIZE}px`,
-                            boxSizing: "border-box",
-                            backgroundColor: isPlayerCell ? "#ff6b6b" : "transparent",
-                            position: "relative",
-                        }}
-                    >
-                        {isPlayerCell && (
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    top: "50%",
-                                    left: "50%",
-                                    transform: "translate(-50%, -50%)",
-                                    width: "12px",
-                                    height: "12px",
-                                    backgroundColor: "#fff",
-                                    borderRadius: "50%",
-                                    border: "2px solid #333",
-                                    zIndex: 10,
-                                }}
-                            />
-                        )}
-                    </div>
-                );
-            })}
-
-
-        </div>
-    );
+            {/* Reward dot */}
+            {!isPlayer && hasReward && (
+              <div style={{
+                position: "absolute",
+                top:    "50%",
+                left:   "50%",
+                transform: "translate(-50%, -50%)",
+                width:  10,
+                height: 10,
+                borderRadius: "50%",
+                backgroundColor: "gold",
+                border: "1px solid #888",
+                zIndex: 1,
+              }}/>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 };
 
 export default MazeRenderer;

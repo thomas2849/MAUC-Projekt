@@ -3,8 +3,11 @@ import board
 import busio
 import usb_hid
 import usb_cdc
+import digitalio
 from adafruit_lsm6ds.lsm6dsox import LSM6DSOX
 from adafruit_hid.mouse import Mouse
+from adafruit_hid.keyboard import Keyboard
+from adafruit_hid.keycode import Keycode
 
 # ————————————————
 # Set up I²C and IMU
@@ -13,68 +16,78 @@ i2c = busio.I2C(board.SCL, board.SDA)
 imu = LSM6DSOX(i2c)
 
 # ————————————————
-# Set up HID Mouse and USB‐CDC “data” serial
+# Set up HID devices and USB-CDC serial
 # ————————————————
 mouse = Mouse(usb_hid.devices)
+keyboard = Keyboard(usb_hid.devices)
 serial = usb_cdc.data
 
 # ————————————————
-# “How much tilt (m/s²) before we move the mouse?”
-threshold = 2.0
+# Set up button on D2 (wired to GND), with pull-up
+# ————————————————
+button = digitalio.DigitalInOut(board.D10)
+button.direction = digitalio.Direction.INPUT
+button.pull = digitalio.Pull.UP
+last_button_state = button.value  # initialize from the real pin
 
-# “How many pixels (units) to move per loop when tilted”
-MOUSE_STEP = 5
+# ————————————————
+# Settings
+# ————————————————
+threshold = 2.0  # m/s² tilt threshold
+MOUSE_STEP = 5  # pixels per loop when tilted
 
 while True:
-    # Read raw acceleration values
+    # Read IMU acceleration
     accel_x, accel_y, _ = imu.acceleration
 
-    # Compute relative movement for this cycle
+    # ————————————————
+    # Mouse movement based on tilt
+    # ————————————————
     dx = 0
     dy = 0
-
-    # If tilted “left” or “right,” move mouse on X‐axis
     if accel_x < -threshold:
         dx = -MOUSE_STEP
     elif accel_x > threshold:
         dx = MOUSE_STEP
-
-    # If tilted “forward” or “back,” move mouse on Y‐axis
-    # Note: negative accel_y means “nose down” → move up (negative Y)
     if accel_y < -threshold:
         dy = MOUSE_STEP
     elif accel_y > threshold:
         dy = -MOUSE_STEP
 
-    # Perform the HID mouse movement (only when dx or dy is non‐zero)
-    if dx != 0 or dy != 0:
+    if dx or dy:
         mouse.move(x=dx, y=dy)
 
-    # —————————————————————
-    # Always send JSON over USB‐CDC “data”
-    # (so your existing serial_to_mqtt.py can pick it up)
-    # —————————————————————
-    if serial:  # and getattr(serial, "connected", False):
-        # Build a direction string just for debugging/payload clarity
-        directions = []
+    # ————————————————
+    # Button press detection (falling edge) with debounce
+    # ————————————————
+    current_button = button.value  # False when pressed
+    if last_button_state and not current_button:
+        # press then release
+        keyboard.press(Keycode.R)
+        keyboard.release(Keycode.R)
+        # wait until button is released to avoid retrigger
+        while not button.value:
+            time.sleep(0.01)
+    last_button_state = button.value
+
+    # ————————————————
+    # Send JSON over serial if connected
+    # ————————————————
+    if serial and getattr(serial, "connected", False):
+        dirs = []
         if accel_y < -threshold:
-            directions.append("UP")
+            dirs.append("UP")
         elif accel_y > threshold:
-            directions.append("DOWN")
-
+            dirs.append("DOWN")
         if accel_x < -threshold:
-            directions.append("LEFT")
+            dirs.append("LEFT")
         elif accel_x > threshold:
-            directions.append("RIGHT")
-
-        # Even if directions is empty, we still send x/y
+            dirs.append("RIGHT")
         payload = '{{"direction":"{}", "x":{:.2f}, "y":{:.2f}}}\n'.format(
-            "+".join(directions), accel_x, accel_y
+            "+".join(dirs), accel_x, accel_y
         )
-        serial.write(payload)
-        print(payload)
+        serial.write(payload.encode('utf-8'))
 
-    # Small delay to avoid over‐flooding USB HID and serial
+    # Loop delay
     time.sleep(0.1)
-
 
