@@ -28,7 +28,29 @@ class Maze:
             current.walls['bottom'] = False
             next.walls['top'] = False
 
-
+    def add_random_loops(self, count):
+        """
+        Randomly knock down `count` walls to introduce loops.
+        """
+        for _ in range(count):
+            cell = random.choice(self.grid_cells)
+            # pick a random neighbor that *has* a wall between them
+            dirs = {
+                'top': (0, -1, 'top', 'bottom'),
+                'bottom': (0, 1, 'bottom', 'top'),
+                'left': (-1, 0, 'left', 'right'),
+                'right': (1, 0, 'right', 'left'),
+            }
+            choices = []
+            for d, (dx, dy, wall, opp) in dirs.items():
+                nx, ny = cell.x + dx, cell.y + dy
+                neighbour = next((c for c in self.grid_cells if c.x == nx and c.y == ny), None)
+                if neighbour and cell.walls[wall]:
+                    choices.append((wall, opp, neighbour))
+            if choices:
+                wall, opp, nb = random.choice(choices)
+                cell.walls[wall] = False
+                nb.walls[opp] = False
 
 
 
