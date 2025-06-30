@@ -7,6 +7,8 @@ const App = () => {
   const [connectionStatus, setConnectionStatus] = useState('Disconnected');
   const [mazeData, setMazeData] = useState(null);
   const [playerPosition, setPlayerPosition] = useState(null);
+  const [rewards, setRewards] = useState([]);
+  const [collectedRewards, setCollectedRewards] = useState(0);
 
   useEffect(() => {
     // Try WebSocket connection first
@@ -31,6 +33,14 @@ const App = () => {
           console.log('✅ Subscribed to arduino/position topic');
         }
       });
+
+      client.subscribe('maze/rewards', (err) => {
+        if (err) {
+          console.error('❌ Failed to subscribe to maze/rewards:', err);
+        } else {
+          console.log('✅ Subscribed to maze/rewards topic');
+        }
+      });
     });
 
     client.on('message', (topic, payload) => {
@@ -52,6 +62,14 @@ const App = () => {
           setMessage(`Player Position: [${position[0]}, ${position[1]}]`);
         } catch (e) {
           setMessage(`Player Position: ${data}`);
+        }
+      } else if (topic === 'maze/rewards') {
+        try {
+          const rewardsCoords = JSON.parse(data);
+          setRewards(rewardsCoords);
+          setMessage(`Rewards Coordinates: ${rewardsCoords.length} rewards`);
+        } catch (e) {
+          setMessage(`Rewards Coordinates: ${data}`);
         }
       }
     });
@@ -75,6 +93,28 @@ const App = () => {
       client.end();
     };
   }, []);
+
+  // Check for reward collection when player position changes
+  useEffect(() => {
+    if (playerPosition && rewards.length > 0) {
+      const playerGridX = Math.floor(playerPosition[0] / 25);
+      const playerGridY = Math.floor(playerPosition[1] / 25);
+
+      const collectedReward = rewards.find(reward =>
+        reward[0] === playerGridX && reward[1] === playerGridY
+      );
+
+      if (collectedReward) {
+        setRewards(prevRewards =>
+          prevRewards.filter(reward =>
+            !(reward[0] === collectedReward[0] && reward[1] === collectedReward[1])
+          )
+        );
+        setCollectedRewards(prev => prev + 1);
+        setMessage(`🎉 Reward collected at [${collectedReward[0]}, ${collectedReward[1]}]! Total collected: ${collectedRewards + 1}`);
+      }
+    }
+  }, [playerPosition, rewards, collectedRewards]);
 
   return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
@@ -103,25 +143,65 @@ const App = () => {
           </p>
         </div>
 
-        {mazeData && (
-            <div style={{ marginBottom: '20px' }}>
-              <h3>Maze Information:</h3>
-              <p>Total cells: {mazeData.length}</p>
-              <p>First cell: x={mazeData[0]?.x}, y={mazeData[0]?.y}</p>
+        <div style={{ display: 'flex', gap: '30px', marginBottom: '20px', flexWrap: 'wrap' }}>
+          {mazeData && (
+              <div>
+                <h3>Maze Information:</h3>
+                <p>Total cells: {mazeData.length}</p>
+                <p>First cell: x={mazeData[0]?.x}, y={mazeData[0]?.y}</p>
+              </div>
+          )}
+
+          {playerPosition && (
+              <div>
+                <h3>Current Player Position:</h3>
+                <p>X: {playerPosition[0]}, Y: {playerPosition[1]}</p>
+                <p>Grid Position: X: {Math.floor(playerPosition[0] / 25)}, Y: {Math.floor(playerPosition[1] / 25)}</p>
+              </div>
+          )}
+
+          <div>
+            <h3>🏆 Rewards Status:</h3>
+            <p>Remaining: {rewards.length}</p>
+            <p>Collected: {collectedRewards}</p>
+            <p>Total original: {rewards.length + collectedRewards}</p>
+          </div>
+        </div>
+
+        {rewards.length > 0 && (
+          <div style={{ marginBottom: '20px' }}>
+            <h3>Current Rewards Locations:</h3>
+            <div style={{
+              maxHeight: '100px',
+              overflowY: 'auto',
+              padding: '10px',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffeaa7',
+              borderRadius: '5px',
+              fontSize: '12px'
+            }}>
+              {rewards.map((reward, index) => (
+                <span key={index} style={{ marginRight: '15px', color: '#856404' }}>
+                  [{reward[0]}, {reward[1]}]
+                </span>
+              ))}
             </div>
+          </div>
         )}
 
-        {playerPosition && (
-            <div style={{ marginBottom: '20px' }}>
-              <h3>Current Player Position:</h3>
-              <p>X: {playerPosition[0]}, Y: {playerPosition[1]}</p>
-              <p>Grid Position: X: {Math.floor(playerPosition[0] / 25)}, Y: {Math.floor(playerPosition[1] / 25)}</p>
-            </div>
-        )}
         {mazeData && (
             <div>
-              <h1>Maze</h1>
-              <MazeRenderer mazeData={mazeData} playerPosition={playerPosition}/>
+              <h3>🗺️ Maze Visualization</h3>
+              <div style={{ marginBottom: '10px', fontSize: '14px', color: '#666' }}>
+                <span style={{ color: '#ff6b6b', fontSize: '16px' }}>●</span> Player &nbsp;&nbsp;
+                <span style={{ color: '#ffd700', fontSize: '16px' }}>●</span> Rewards &nbsp;&nbsp;
+                <span style={{ color: '#000' }}>━</span> Walls
+              </div>
+              <MazeRenderer
+                mazeData={mazeData}
+                playerPosition={playerPosition}
+                rewards={rewards}
+              />
             </div>
         )}
 
@@ -131,11 +211,11 @@ const App = () => {
             <li>Make sure your MQTT broker supports WebSockets on port 9001</li>
             <li>Check that your Python maze game is running and publishing data</li>
             <li>Look at the browser console for detailed connection logs</li>
+            <li>Ensure your game publishes to 'maze/rewards' topic when rewards change</li>
           </ul>
         </div>
       </div>
   );
 };
-
 
 export default App;
