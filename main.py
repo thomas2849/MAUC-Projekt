@@ -26,7 +26,7 @@ class Main:
         # 1) Clear the flag and restart your timer
         self.game_over = False
         self.clock.start_timer()
-
+        # self.player.rewards =0
         # 2) Re-create the maze object (fresh walls/visited)
         self.maze = Maze(self.cols, self.rows)
         self.maze.generate_maze()
@@ -55,12 +55,12 @@ class Main:
         ]
         self.mqtt.publish("maze/data", json.dumps(maze_data))
 
-        print("🔄 Game reset!")
+        print("Game reset!")
 
     def generate_random_coordinates(self):
         return [random.choice(self.maze.grid_cells) for _ in range(15)]
 
-    def _draw(self):
+    def _draw(self, mqtt):
         sw, sh  = self.screen.get_size()
         maze_w  = self.maze_w
         panel_w = self.panel_w
@@ -99,6 +99,7 @@ class Main:
         # Tick or stop the timer
         if not self.game_over:
             self.clock.update_timer()
+
         else:
             self.clock.stop_timer()
 
@@ -110,6 +111,7 @@ class Main:
         reward_surf = self.font.render(
             f"Rewards: {self.player.rewards}", True, self.message_color)
         self.screen.blit(reward_surf, (maze_w + 20, 100))
+
 
         pygame.display.flip()
 
@@ -124,7 +126,7 @@ class Main:
     def main(self):
         # MQTT setup
         self.mqtt.connect("localhost", 1883, 60)
-        self.mqtt.subscribe("game/reset")
+        self.mqtt.subscribe("maze/reset")
         self.mqtt.on_message = lambda c, u, m: self.reset_game()
 
         # Layout: maze on left, HUD on right
@@ -152,14 +154,33 @@ class Main:
         # Publish maze data
         maze_data = [{"x": c.x, "y": c.y, "walls": c.walls}
                      for c in self.maze.grid_cells]
+        print(maze_data[0])
         self.mqtt.publish("maze/data", json.dumps(maze_data))
 
         # Start timer & rewards
         self.clock.start_timer()
         self.coords = self.generate_random_coordinates()
-
+        rewards_coords = []
+        for c in self.coords:
+            rewards_coords.append([c.x, c.y])
+        self.mqtt.publish("maze/rewards", json.dumps(rewards_coords))
+        if self.running:
+            self.mqtt.publish("maze/game_state", "Running")
+            print("Published")
+        prev_time = "00:00"
+        prev_rewards =0
+        self.mqtt.publish("maze/reward_count", str(prev_rewards))
         # Main loop
         while self.running:
+
+            secs = int(self.clock.elapsed_time % 60)
+            mins = int(self.clock.elapsed_time / 60)
+            time = f"{mins:02}:{secs:02}"
+            self.mqtt.publish("maze/timer", time) if prev_time != time else None
+            prev_time = time
+            reward = self.player.rewards
+            self.mqtt.publish("maze/reward_count", str(reward)) if prev_rewards != reward else None
+            prev_rewards = reward
             for event in pygame.event.get():
                 # 1) Quit on window-close
                 if event.type == pygame.QUIT:
@@ -208,10 +229,12 @@ class Main:
 
                 # 4) Check win after processing input
                 if self.game.is_game_over(self.player):
+                    self.mqtt.publish("maze/game_state", "Game Over")
                     self.game_over = True
 
             # 5) Draw + rewards + frame-cap
-            self._draw()
+            self._draw(self.mqtt)
+            self.mqtt.publish("maze/time")
             self.check_reward(self.player, self.tile)
             self.FPS.tick(60)
 
@@ -221,4 +244,4 @@ if __name__ == "__main__":
     pygame.font.init()
     screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
     pygame.display.set_caption("Maze")
-    Main(screen, tile=30).main()
+    Main(screen, tile=25).main()

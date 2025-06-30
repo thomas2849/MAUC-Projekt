@@ -3,7 +3,7 @@ import "./Maze.css"; // Import CSS for wall styles
 
 const CELL_SIZE = 25; // in pixels
 
-const MazeRenderer = ({ mazeData, playerPosition }) => {
+const MazeRenderer = ({ mazeData, playerPosition, rewards }) => {
     const maxX = Math.max(...mazeData.map(cell => cell.x)) + 1;
     const maxY = Math.max(...mazeData.map(cell => cell.y)) + 1;
 
@@ -11,19 +11,34 @@ const MazeRenderer = ({ mazeData, playerPosition }) => {
     const getGridPosition = (position) => {
         if (!position || position.length < 2) return null;
 
-        // Assuming the position coordinates need to be mapped to grid cells
-        // You might need to adjust this conversion based on your coordinate system
         const gridX = Math.floor(position[0] / CELL_SIZE);
         const gridY = Math.floor(position[1] / CELL_SIZE);
 
-        // Ensure the position is within bounds
-        if (gridX >= 0 && gridX < maxX && gridY >= 0 && gridY < maxY) {
-            return { x: gridX, y: gridY };
+        // Only log when position changes
+        const positionKey = `${gridX},${gridY}`;
+        if (window.lastLoggedPosition !== positionKey) {
+            console.log(`Player moved to grid [${gridX}, ${gridY}] from pixels [${position[0]}, ${position[1]}]`);
+            window.lastLoggedPosition = positionKey;
         }
-        return null;
+
+        // Clamp to valid bounds
+        const clampedX = Math.max(0, Math.min(gridX, maxX - 1));
+        const clampedY = Math.max(0, Math.min(gridY, maxY - 1));
+
+        return { x: clampedX, y: clampedY };
     };
 
     const gridPlayerPosition = getGridPosition(playerPosition);
+
+    // Check if a cell has a reward
+    const hasReward = (x, y) => {
+        return rewards && rewards.some(reward => reward[0] === x && reward[1] === y);
+    };
+
+    // Debug logging - simplified
+    if (gridPlayerPosition) {
+        console.log(`Current grid position: [${gridPlayerPosition.x}, ${gridPlayerPosition.y}]`);
+    }
 
     return (
         <div
@@ -33,6 +48,8 @@ const MazeRenderer = ({ mazeData, playerPosition }) => {
                 display: "grid",
                 gridTemplateColumns: `repeat(${maxX}, ${CELL_SIZE}px)`,
                 gridTemplateRows: `repeat(${maxY}, ${CELL_SIZE}px)`,
+                border: "2px solid #333",
+                backgroundColor: "#f9f9f9"
             }}
         >
             {mazeData.map((cell, index) => {
@@ -40,6 +57,10 @@ const MazeRenderer = ({ mazeData, playerPosition }) => {
                 const isPlayerCell = gridPlayerPosition &&
                     cell.x === gridPlayerPosition.x &&
                     cell.y === gridPlayerPosition.y;
+                const cellHasReward = hasReward(cell.x, cell.y);
+
+                // Debug: Only log when we find the player cell
+
 
                 return (
                     <div
@@ -53,31 +74,73 @@ const MazeRenderer = ({ mazeData, playerPosition }) => {
                             width: `${CELL_SIZE}px`,
                             height: `${CELL_SIZE}px`,
                             boxSizing: "border-box",
-                            backgroundColor: isPlayerCell ? "#ff6b6b" : "transparent",
+                            backgroundColor: isPlayerCell ? "#ffe6e6" : "white",
                             position: "relative",
                         }}
                     >
-                        {isPlayerCell && (
+                        {/* Render reward if present and not collected */}
+                        {cellHasReward && !isPlayerCell && (
                             <div
                                 style={{
                                     position: "absolute",
                                     top: "50%",
                                     left: "50%",
                                     transform: "translate(-50%, -50%)",
-                                    width: "12px",
-                                    height: "12px",
-                                    backgroundColor: "#fff",
+                                    width: "10px",
+                                    height: "10px",
+                                    backgroundColor: "#ffd700",
                                     borderRadius: "50%",
-                                    border: "2px solid #333",
-                                    zIndex: 10,
+                                    border: "2px solid #ffaa00",
+                                    zIndex: 5,
+                                    boxShadow: "0 0 6px rgba(255, 215, 0, 0.8)",
                                 }}
                             />
                         )}
+
+                        {/* Render player if present */}
+                        {isPlayerCell && (
+                            <>
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: "50%",
+                                        left: "50%",
+                                        transform: "translate(-50%, -50%)",
+                                        width: "16px",
+                                        height: "16px",
+                                        backgroundColor: "#ff4444",
+                                        borderRadius: "50%",
+                                        border: "3px solid #fff",
+                                        zIndex: 10,
+                                        boxShadow: "0 0 8px rgba(255, 68, 68, 0.6)",
+                                    }}
+                                />
+                                <div
+                                    style={{
+                                        position: "absolute",
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        border: "3px solid #00ff00",
+                                        zIndex: 12,
+                                        pointerEvents: "none"
+                                    }}
+                                />
+                            </>
+                        )}
+
+
+
+
+
+
+
+
+
                     </div>
                 );
             })}
-
-
         </div>
     );
 };
