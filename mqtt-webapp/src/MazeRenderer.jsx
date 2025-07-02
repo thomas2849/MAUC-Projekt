@@ -1,6 +1,8 @@
 import React from "react";
 import "./Maze.css"; // Import CSS for wall styles
 
+// Achtung: Diese Datei enthaelt teilweise KI erzeugte Code
+
 const CELL_SIZE = 25; // in pixels
 
 const MazeRenderer = ({ mazeData, playerPosition, rewards }) => {
@@ -101,32 +103,21 @@ const MazeRenderer = ({ mazeData, playerPosition, rewards }) => {
                         {isPlayerCell && (
                             <>
                                 <div
-                                    style={{
-                                        position: "absolute",
-                                        top: "50%",
-                                        left: "50%",
-                                        transform: "translate(-50%, -50%)",
-                                        width: "16px",
-                                        height: "16px",
-                                        backgroundColor: "#ff4444",
-                                        borderRadius: "50%",
-                                        border: "3px solid #fff",
-                                        zIndex: 10,
-                                        boxShadow: "0 0 8px rgba(255, 68, 68, 0.6)",
-                                    }}
+                                  style={{
+                                    position: "absolute",
+                                    top: "50%",
+                                    left: "50%",
+                                    transform: "translate(-50%, -50%)",
+                                    width: "16px",
+                                    height: "16px",
+                                    backgroundColor: "#ff4444",
+                                    borderRadius: "50%",
+                                    border: "3px solid #fff",
+                                    boxShadow: "0 0 8px rgba(255, 68, 68, 0.6)",
+                                    zIndex: 10,
+                                  }}
                                 />
-                                <div
-                                    style={{
-                                        position: "absolute",
-                                        top: 0,
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        border: "3px solid #00ff00",
-                                        zIndex: 12,
-                                        pointerEvents: "none"
-                                    }}
-                                />
+
                             </>
                         )}
 

@@ -15,30 +15,30 @@ const App = () => {
     const client = mqtt.connect('ws://localhost:9001');  // Changed to WebSocket
 
     client.on('connect', () => {
-      console.log('✅ Connected to MQTT broker');
+      console.log(' Connected to MQTT broker');
       setConnectionStatus('Connected');
 
       client.subscribe('maze/data', (err) => {
         if (err) {
-          console.error('❌ Failed to subscribe to maze/data:', err);
+          console.error(' Failed to subscribe to maze/data:', err);
         } else {
-          console.log('✅ Subscribed to maze/data topic');
+          console.log(' Subscribed to maze/data topic');
         }
       });
 
       client.subscribe('arduino/position', (err) => {
         if (err) {
-          console.error('❌ Failed to subscribe to arduino/position:', err);
+          console.error(' Failed to subscribe to arduino/position:', err);
         } else {
-          console.log('✅ Subscribed to arduino/position topic');
+          console.log(' Subscribed to arduino/position topic');
         }
       });
 
       client.subscribe('maze/rewards', (err) => {
         if (err) {
-          console.error('❌ Failed to subscribe to maze/rewards:', err);
+          console.error(' Failed to subscribe to maze/rewards:', err);
         } else {
-          console.log('✅ Subscribed to maze/rewards topic');
+          console.log(' Subscribed to maze/rewards topic');
         }
       });
     });
@@ -75,17 +75,17 @@ const App = () => {
     });
 
     client.on('error', (error) => {
-      console.error('❌ MQTT connection error:', error);
+      console.error(' MQTT connection error:', error);
       setConnectionStatus('Error: ' + error.message);
     });
 
     client.on('offline', () => {
-      console.log('📴 MQTT client is offline');
+      console.log(' MQTT client is offline');
       setConnectionStatus('Offline');
     });
 
     client.on('reconnect', () => {
-      console.log('🔄 MQTT client reconnecting...');
+      console.log(' MQTT client reconnecting...');
       setConnectionStatus('Reconnecting...');
     });
 
@@ -111,14 +111,14 @@ const App = () => {
           )
         );
         setCollectedRewards(prev => prev + 1);
-        setMessage(`🎉 Reward collected at [${collectedReward[0]}, ${collectedReward[1]}]! Total collected: ${collectedRewards + 1}`);
+        setMessage(`Reward collected at [${collectedReward[0]}, ${collectedReward[1]}]! Total collected: ${collectedRewards + 1}`);
       }
     }
   }, [playerPosition, rewards, collectedRewards]);
 
   return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-        <h1>🎮 MQTT Maze Game Monitor</h1>
+        <h1> MQTT Maze Game Monitor</h1>
 
         <div style={{
           padding: '10px',
@@ -161,7 +161,7 @@ const App = () => {
           )}
 
           <div>
-            <h3>🏆 Rewards Status:</h3>
+            <h3> Rewards Status:</h3>
             <p>Remaining: {rewards.length}</p>
             <p>Collected: {collectedRewards}</p>
             <p>Total original: {rewards.length + collectedRewards}</p>
@@ -191,7 +191,7 @@ const App = () => {
 
         {mazeData && (
             <div>
-              <h3>🗺️ Maze Visualization</h3>
+              <h3> Maze Visualization</h3>
               <div style={{ marginBottom: '10px', fontSize: '14px', color: '#666' }}>
                 <span style={{ color: '#ff6b6b', fontSize: '16px' }}>●</span> Player &nbsp;&nbsp;
                 <span style={{ color: '#ffd700', fontSize: '16px' }}>●</span> Rewards &nbsp;&nbsp;
@@ -204,16 +204,6 @@ const App = () => {
               />
             </div>
         )}
-
-        <div style={{ fontSize: '12px', color: '#666', marginTop: '30px' }}>
-          <p>🔧 Troubleshooting:</p>
-          <ul>
-            <li>Make sure your MQTT broker supports WebSockets on port 9001</li>
-            <li>Check that your Python maze game is running and publishing data</li>
-            <li>Look at the browser console for detailed connection logs</li>
-            <li>Ensure your game publishes to 'maze/rewards' topic when rewards change</li>
-          </ul>
-        </div>
       </div>
   );
 };

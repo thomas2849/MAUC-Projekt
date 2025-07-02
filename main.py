@@ -1,3 +1,5 @@
+
+
 import sys
 import json
 import random
@@ -190,7 +192,7 @@ class Main:
                 # 2) Reset / Quit on keypress—always checked, mid-game or not
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_r:
-                        print("🔄 Resetting game…")  # debug: should appear whenever you hit R
+                        print("Resetting game…")  # debug: should appear whenever you hit R
                         self.reset_game()
                     elif event.key == pygame.K_ESCAPE:
                         pygame.quit()
